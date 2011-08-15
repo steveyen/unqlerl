@@ -1,4 +1,4 @@
-unqlbob
+unqlerl - "Uncle Earl"
 
-pronounced - Uncle Bob, because Bob's your uncle.
+UnQL implementation in Erlang.
 

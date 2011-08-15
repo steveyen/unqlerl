@@ -1,6 +1,6 @@
--module(ub_main).
+-module(ue_main).
 
--record(ub_query, {ref, % From make_ref().
+-record(ue_query, {ref, % From make_ref().
                    text,
                    matchers,
                    where_fun}).
@@ -108,8 +108,8 @@ execute_where(ClientCB, Query, Join, Acc) ->
     end,
     Acc.
 
-where_satisfied(#ub_query{where_fun=undefined}, _Join) ->
+where_satisfied(#ue_query{where_fun=undefined}, _Join) ->
     true;
-where_satisfied(#ub_query{where_fun=WhereFun}, Join) ->
+where_satisfied(#ue_query{where_fun=WhereFun}, Join) ->
     WhereFun(Join).
 
