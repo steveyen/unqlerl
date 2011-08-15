@@ -7,12 +7,6 @@
 
 -compile(export_all).
 
-test() ->
-    2 = 2,
-    ok.
-
-% -------------------------------------------------
-
 % Example of 3 table nested loop join, showing how we derive
 % the generic execute_nlj() function.
 %
@@ -75,21 +69,21 @@ execute_nlj(ClientCB, Query, Tables) ->
     % A generic nested-loop-join implementation for joining N number
     % of tables, and which creates only N + 1 visitor functions/closures.
     %
-    NTables = lists:length(Tables),
+    NTables = length(Tables),
     InnerVisitorFun = fun(Join, Acc) ->
                           execute_where(ClientCB, Query, Join, Acc)
                       end,
     [VisitorFunOuter | _] =
         lists:foldr(fun(Table, [LastVisitorFun | _ ] = VisitorFuns) ->
                         [fun(Join, Acc) ->
-                             QueryPart = NTables - lists:length(VisitorFuns),
+                             QueryPart = NTables - length(VisitorFuns),
                              {ok, ScanPrep, AccNext} =
                                   scan_prep(Query, QueryPart, Table, Join, Acc),
                              scan(Table, ScanPrep, AccNext, Join, LastVisitorFun)
                          end | VisitorFuns]
                     end,
-                    Tables,
-                    [InnerVisitorFun]),
+                    [InnerVisitorFun],
+                    Tables),
     VisitorFunOuter([], outer).
 
 scan([], _ScanPrep, Acc, _JoinPrev, _DocVisitorFun) ->
@@ -106,10 +100,49 @@ execute_where(ClientCB, Query, Join, Acc) ->
         true -> ClientCB(result, Query, Join, Acc);
         false -> ok
     end,
-    Acc.
+    {ok, Acc}.
 
 where_satisfied(#ue_query{where_fun=undefined}, _Join) ->
     true;
 where_satisfied(#ue_query{where_fun=WhereFun}, Join) ->
     WhereFun(Join).
 
+% -------------------------------------------------
+
+test() ->
+    ok = scan_test(),
+    ok = nlj_test(),
+    ok.
+
+scan_test() ->
+    {ok, acc} = scan([], unused, acc, unused, unused),
+    {ok, []} =
+         scan([], ok, [], [],
+              fun([Doc | _], Acc) -> {ok, [Doc | Acc]} end),
+    {ok, [1]} =
+         scan([1], ok, [], [],
+              fun([Doc | _], Acc) -> {ok, [Doc | Acc]} end),
+    {ok, [3,2,1]} =
+         scan([1,2,3], ok, [], [],
+              fun([Doc | _], Acc) -> {ok, [Doc | Acc]} end),
+    ok.
+
+nlj_test() ->
+    {ok, no_tables} =
+        execute_nlj(unused, unused, []),
+    {ok, outer} =
+        execute_nlj(fun(Kind, _Query, _Join, _Acc) ->
+                        Kind = unexpected_invocation
+                    end,
+                    #ue_query{},
+                    [[]]),
+    {ok, outer} =
+        execute_nlj(fun(Kind, Query, Join, Acc) ->
+                        Kind = result,
+                        Query = #ue_query{},
+                        Join = [1],
+                        Acc = outer
+                    end,
+                    #ue_query{},
+                    [[1]]),
+    ok.
