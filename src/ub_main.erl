@@ -50,7 +50,10 @@ execute_nlj_3_example_a(ClientCB, Query, [T0, T1, T2]) ->
         end).
 
 execute_nlj_3_example_b(ClientCB, Query, [T0, T1, T2] = _Tables) ->
-    % Here we move the closures outside the scan calls.
+    % Compared to execute_nlj_3_example_a(), we've move the closures
+    % outside the scan calls, so there's a lot less closure creation.
+    % The execute_nlj() implementation is a generification of this
+    % function.
     %
     Fun2 = fun(Join2, Acc2) ->
                execute_where(ClientCB, Query, Join2, Acc2)
@@ -110,21 +113,3 @@ where_satisfied(#ub_query{where_fun=undefined}, _Join) ->
 where_satisfied(#ub_query{where_fun=WhereFun}, Join) ->
     WhereFun(Join).
 
-prepare_hash(Query, QueryPart, Table) ->
-    Ref = erlang:make_ref(),
-    erlang:put(Ref, dict:new()),
-    Path = query_path(Query, QueryPart, Table),
-    {ok, ScanPrep, InitialAcc} = scan_prep(Query, QueryPart, hash_Table, populate, populate),
-    scan(Table, ScanPrep, InitialAcc, [],
-         fun([Doc], _Acc) ->
-           V = doc_path_deref(Doc, Path),
-           erlang:put(Ref, dict:store(Path, V, erlang:get(Ref)))
-         end),
-    Result = erlang:erase(Ref),
-    Result.
-
-query_path(_Query, _QueryPart, _Table) ->
-    undefined.
-
-doc_path_deref(_Doc, _Path) ->
-    undefined.
