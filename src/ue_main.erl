@@ -145,4 +145,86 @@ nlj_test() ->
                     end,
                     #ue_query{},
                     [[1]]),
+    put(joins, []),
+    {ok, outer} =
+        execute_nlj(fun(Kind, Query, Join, Acc) ->
+                        Kind = result,
+                        Query = #ue_query{},
+                        put(joins, [Join | get(joins)]),
+                        Acc = outer
+                    end,
+                    #ue_query{},
+                    [[1, 2, 3]]),
+    [[3],[2],[1]] = get(joins),
+    put(joins, []),
+    {ok, outer} =
+        execute_nlj(fun(Kind, Query, Join, Acc) ->
+                        Kind = result,
+                        Query = #ue_query{},
+                        put(joins, [Join | get(joins)]),
+                        Acc = outer
+                    end,
+                    #ue_query{},
+                    [[1, 2, 3], [a, b]]),
+    [[b,3],[a,3],[b,2],[a,2],[b,1],[a,1]] = get(joins),
+    put(joins, []),
+    {ok, outer} =
+        execute_nlj(fun(Kind, Query, Join, Acc) ->
+                        Kind = result,
+                        Query = #ue_query{},
+                        put(joins, [Join | get(joins)]),
+                        Acc = outer
+                    end,
+                    #ue_query{},
+                    [[1, 2, 3], []]),
+    [] = get(joins),
+    put(joins, []),
+    {ok, outer} =
+        execute_nlj(fun(Kind, Query, Join, Acc) ->
+                        Kind = result,
+                        Query = #ue_query{},
+                        put(joins, [Join | get(joins)]),
+                        Acc = outer
+                    end,
+                    #ue_query{},
+                    [[], [1, 2, 3]]),
+    [] = get(joins),
+    put(joins, []),
+    {ok, outer} =
+        execute_nlj(fun(Kind, Query, Join, Acc) ->
+                        Kind = result,
+                        Query = #ue_query{},
+                        put(joins, [Join | get(joins)]),
+                        Acc = outer
+                    end,
+                    #ue_query{},
+                    [[1, 2, 3], [a, b], []]),
+    [] = get(joins),
+    put(joins, []),
+    {ok, outer} =
+        execute_nlj(fun(Kind, Query, Join, Acc) ->
+                        Kind = result,
+                        Query = #ue_query{},
+                        put(joins, [Join | get(joins)]),
+                        Acc = outer
+                    end,
+                    #ue_query{},
+                    [[1], [a], [x]]),
+    [[x,a,1]] = get(joins),
+    put(joins, []),
+    {ok, outer} =
+        execute_nlj(fun(Kind, Query, Join, Acc) ->
+                        Kind = result,
+                        Query = #ue_query{},
+                        put(joins, [Join | get(joins)]),
+                        Acc = outer
+                    end,
+                    #ue_query{},
+                    [[1, 2, 3], [a, b], [x, y]]),
+    [[y,b,3],[x,b,3],
+     [y,a,3],[x,a,3],
+     [y,b,2],[x,b,2],
+     [y,a,2],[x,a,2],
+     [y,b,1],[x,b,1],
+     [y,a,1],[x,a,1]] = get(joins),
     ok.
